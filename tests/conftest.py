@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+from urllib.parse import unquote, urlsplit
 
 import pytest
 
@@ -48,6 +49,7 @@ def app_modules(tmp_path_factory):
     environment = {
         "PYTHON_DOTENV_DISABLED": "1",
         "JWT_SECRET": secrets.token_hex(48),
+        "SETUP_TOKEN": "",
         "ALGORITHM": "HS256",
         "ACCESS_TOKEN_EXPIRE_MINUTES": "30",
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{runtime / 'bootstrap.sqlite3'}",
@@ -62,7 +64,13 @@ def app_modules(tmp_path_factory):
     original_connect = sqlite3.dbapi2.connect
 
     def temporary_connect(database, *args, **kwargs):
-        if not Path(database).resolve().is_relative_to(runtime.parent):
+        filename = database
+        if kwargs.get("uri") and str(database).startswith("file:"):
+            uri = urlsplit(database)
+            if uri.netloc:
+                raise RuntimeError("Remote SQLite URIs are forbidden in tests")
+            filename = unquote(uri.path)
+        if not Path(filename).resolve().is_relative_to(runtime.parent):
             raise RuntimeError(
                 "SQLite connections must stay in this pytest temporary directory"
             )
@@ -103,9 +111,11 @@ def app_modules(tmp_path_factory):
                 modules["database"].engine.dispose()
                 for name in (
                     *APP_MODULE_NAMES,
+                    "init_admin",
                     "routers",
                     "routers.auth",
                     "routers.ips",
+                    "routers.setup",
                     "routers.users",
                     "routers.instant_access",
                 ):

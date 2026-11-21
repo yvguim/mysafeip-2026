@@ -2,10 +2,11 @@ import secrets
 from datetime import datetime, timedelta
 
 import pyotp
+from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 import security
-from models import InstantAccess, Ip, Token, User
+from models import InitialSetup, InstantAccess, Ip, Token, User
 from schemas import TokenCreate, UserCreate
 from settings import settings
 
@@ -28,6 +29,7 @@ def create_user(db: Session, user: UserCreate):
         is_admin=user.is_admin,
         hashed_password=security.get_password_hash(user.password),
     )
+    db.execute(delete(InitialSetup).where(InitialSetup.id == 1))
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -13,11 +14,11 @@ from sqlalchemy.orm import Session
 import crud
 import models
 from auth import check_user, check_user_language, get_current_user
-from database import SessionLocal, engine, get_db
-from routers import auth, instant_access, ips, users
+from database import SessionLocal, engine, get_db, initialize_database
+from routers import auth, instant_access, ips, setup, users
 from security import get_client_ip
 
-models.Base.metadata.create_all(bind=engine)
+initialize_database(engine)
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -25,6 +26,7 @@ app.include_router(users.router)
 app.include_router(ips.router)
 app.include_router(instant_access.router)
 app.include_router(auth.router)
+app.include_router(setup.router)
 
 
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
@@ -79,6 +81,10 @@ async def main(
     language: dict = Depends(check_user_language),
 ):
     """Home page get request"""
+    if setup.is_available(db):
+        return RedirectResponse(
+            "/setup", status_code=303, headers=setup.PRIVATE_HEADERS
+        )
     client_host = get_client_ip(request)
     user = await check_user(request, db)
     return templates.TemplateResponse(

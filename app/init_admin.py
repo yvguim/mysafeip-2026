@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 import crud
-from database import SessionLocal
+from database import SessionLocal, engine, initialize_database
 from schemas import UserCreate
 
 
@@ -28,6 +28,7 @@ def main(argv: list[str]) -> int:
         )
         return 2
     try:
+        initialize_database(engine)
         with SessionLocal() as db:
             create_user(email=argv[0], password=argv[1], db=db)
     except EmailAlreadyRegisteredError as error:

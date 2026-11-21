@@ -7,12 +7,13 @@
 You need a running Docker engine, the Docker Compose plugin, and OpenSSL. From the repository root, next to `compose.yaml`, run the commands below. Compose builds the app from the supplied `Dockerfile`; a published MySafeIP image or registry credentials are not required for a standard installation.
 
 ```sh
-(umask 077; set -C; secret=$(openssl rand -hex 32) && printf 'JWT_SECRET=%s\n' "$secret" > .env)
+(umask 077; set -C; jwt=$(openssl rand -hex 32) && setup=$(openssl rand -hex 32) &&
+  printf 'JWT_SECRET=%s\nSETUP_TOKEN=%s\n' "$jwt" "$setup" > .env)
 docker compose up -d --build --wait
 docker compose ps
 ```
 
-The first command refuses to overwrite an existing `.env`. If you've already configured the instance, keep the file and skip to startup. Don't share `.env`: it contains the secret used to sign sessions. Open `http://127.0.0.1:8000`; the service should be up and the home page reachable.
+The first command refuses to overwrite an existing `.env`. If you've already configured the instance, keep the file and skip to startup. Don't share `.env`: it contains the session signing secret and, for a fresh install, the setup token. At startup, MySafeIP creates the SQLite file and tables if they are missing.
 
 ```text
 Browser ── HTTP on 127.0.0.1:8000 ──> Web container
@@ -24,13 +25,19 @@ Browser ── HTTP on 127.0.0.1:8000 ──> Web container
 
 ## Create the first administrator
 
-The Compose configuration disables signups. Run the following in an interactive terminal. The password isn't displayed or passed as a process argument.
+1. Open `http://127.0.0.1:8000`. On a fresh install, MySafeIP shows the form for creating the first administrator.
+2. Paste the `SETUP_TOKEN` value from `.env` into the form. Don't enter `JWT_SECRET`. Provide your email address and choose a unique password.
+3. Submit the form, then sign in. The form closes permanently for this database, even after a restart. You can remove `SETUP_TOKEN` from `.env` and run `docker compose up -d --wait` to remove it from the container environment. Keep `JWT_SECRET`.
+
+The form does not activate for an existing, initialized database or without a valid setup token distinct from `JWT_SECRET`. Regular signups remain closed. Keep the service local while setting it up, and enable TOTP in your profile; see [Usage](usage.md).
+
+If you need to create an administrator without the form (for example on an existing database), run the following in an interactive terminal. The password isn't displayed or passed as a process argument.
 
 ```sh
 docker compose exec web python -c 'from getpass import getpass; from init_admin import main; raise SystemExit(main([input("Admin email: "), getpass("Password: ")]))'
 ```
 
-When the command exits successfully, sign in through the web interface. If the email already exists, the script does not replace the account. Use a unique password and enable TOTP in your profile; see [Usage](usage.md).
+If the email already exists, the script does not replace the account.
 
 ## Configure the port, address, and language
 

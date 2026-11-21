@@ -4,6 +4,14 @@ from sqlalchemy.orm import relationship
 from database import Base
 
 
+class InitialSetup(Base):
+    """A singleton row marks a new installation that has not created an account."""
+
+    __tablename__ = "initial_setup"
+
+    id = Column(Integer, primary_key=True)
+
+
 class User(Base):
     __tablename__ = "users"
 
