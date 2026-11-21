@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="{{ language['html_lang']|default('en') }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ language['website_title'] }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="/static/modern.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-visual">
+    <div class="auth-visual-header">
+      <div class="brand-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <span>{{ language['website_title'] }}</span>
+    </div>
+    <div class="auth-visual-body">
+      <h2>{{ language['auth-visual-title'] }}</h2>
+      <p>{{ language['auth-visual-body'] }}</p>
+    </div>
+    <div class="auth-visual-footer">
+      {{ language['bottom-text'] }} <a href="https://github.com/yvguim/mysafeip">GitHub</a>
+    </div>
+  </div>
+
+  <div class="auth-form-panel">
+    <div class="auth-card">
+      <!-- Global Alerts -->
+      {% if language['success'] %}
+      <div class="alert alert-success" role="alert" style="margin-bottom: 20px;">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        {{ language['success'] }}
+      </div>
+      {% endif %}
+      {% if language['danger'] %}
+      <div class="alert alert-danger" role="alert" style="margin-bottom: 20px;">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {{ language['danger'] }}
+      </div>
+      {% endif %}
+      {% if language['warning'] %}
+      <div class="alert alert-warning" role="alert" style="margin-bottom: 20px;">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        {{ language['warning'] }}
+      </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+
+      <div class="lang-switcher-mini">
+        <a href="/lang/fr" class="{% if language['html_lang'] == 'fr' %}active{% endif %}">FR</a>
+        <a href="/lang/en" class="{% if language['html_lang'] == 'en' %}active{% endif %}">EN</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

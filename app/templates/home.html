@@ -1,0 +1,49 @@
+{%extends "layout.html" %}
+
+{% block content %}
+
+<div class="hero">
+  {% if user.email %}
+  <h1>{{ language['Welcome'] }}, {{ user.email }}</h1>
+  <p>{{ language['Here-is-your-IP'] }} <code>{{ client_host }}</code></p>
+  <div class="hero-actions">
+    <a href="/ips/config" class="btn btn-primary">{{ language['Add-delete-safe-ip'] }}</a>
+    {% if user.is_admin %}
+    <a href="/users/read" class="btn btn-secondary">{{ language['Users'] }}</a>
+    {% else %}
+    <a href="/users/details/{{ user.id }}" class="btn btn-secondary">{{ language['My-account'] }}</a>
+    {% endif %}
+  </div>
+  {% else %}
+  <h1>{{ language['Welcome'] }}</h1>
+  <p>{{ language['Here-is-your-IP'] }}: <code>{{ client_host }}</code></p>
+  <p class="text-secondary">{{ language['consider-login-register'] }}</p>
+  <div class="hero-actions">
+    <a href="/signin" class="btn btn-primary">{{ language['Login'] }}</a>
+    <a href="/register" class="btn btn-secondary">{{ language['Register'] }}</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="features-grid">
+  <div class="feature-card">
+    <div class="icon">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+    </div>
+    <p>{{ language['arg1'] }}</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+    </div>
+    <p>{{ language['arg2'] }}</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    </div>
+    <p>{{ language['arg3'] }}</p>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="{{ language['html_lang']|default('en') }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ language['website_title'] }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="/static/modern.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="app-page">
+
+  <!-- Left Panel (Sidebar) -->
+  <aside class="page-sidebar" id="pageSidebar">
+    <div class="page-sidebar-inner">
+      <!-- Brand -->
+      <a href="/" class="sidebar-brand">
+        <div class="brand-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <span>{{ language['website_title'] }}</span>
+      </a>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav">
+        <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          {{ language['safe_ip'] }}
+        </a>
+        <a href="/ips/config/" class="{% if request.url.path.startswith('/ips') %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          {{ language['Declare-trust-ip'] }}
+        </a>
+        <a href="/instant-access/config/" class="{% if request.url.path.startswith('/instant-access') %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          {{ language['instant_links'] }}
+        </a>
+        {% if user.is_admin %}
+        <a href="/users/read" class="{% if request.url.path.startswith('/users/read') %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg>
+          {{ language['Users'] }}
+        </a>
+        {% endif %}
+        <a href="/users/details/{{ user.id }}" class="{% if request.url.path.startswith('/users/details') or request.url.path.startswith('/users/reset_password') %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          {{ language['My-account'] }}
+        </a>
+        <div style="margin-top: auto;"></div>
+        <form action="/logout" method="GET">
+          <button type="submit">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            {{ language['Logout'] }}
+          </button>
+        </form>
+      </nav>
+
+      <!-- Footer -->
+      <div class="sidebar-footer">
+        <div class="lang-switcher">
+          <a href="/lang/fr" class="{% if language['html_lang'] == 'fr' %}active{% endif %}">FR</a>
+          <a href="/lang/en" class="{% if language['html_lang'] == 'en' %}active{% endif %}">EN</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Right Panel (Main Content) -->
+  <main class="page-main">
+
+    <!-- Mobile Header -->
+    <header class="page-mobile-header">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <button class="mobile-toggle" onclick="toggleSidebar()">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span class="top-header-title">{{ language['website_title'] }}</span>
+      </div>
+      <div class="user-pill">
+        <div class="avatar">{{ user.email[0]|upper }}</div>
+        <span>{{ user.email }}</span>
+        {% if user.is_admin %}
+        <span class="badge badge-success" style="font-size:0.625rem;padding:2px 8px;">{{ language['administrator'] }}</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Alerts & Content -->
+    <div class="page-content">
+      {% if language['success'] %}
+      <div class="alert alert-success" role="alert">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        {{ language['success'] }}
+      </div>
+      {% endif %}
+      {% if language['danger'] %}
+      <div class="alert alert-danger" role="alert">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {{ language['danger'] }}
+      </div>
+      {% endif %}
+      {% if language['warning'] %}
+      <div class="alert alert-warning" role="alert">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        {{ language['warning'] }}
+      </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </div>
+
+    <footer class="app-footer">
+      <p>{{ language['bottom-text'] }} <a href="https://github.com/yvguim/mysafeip">GitHub</a></p>
+    </footer>
+  </main>
+</div>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('pageSidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+</script>
+
+</body>
+</html>

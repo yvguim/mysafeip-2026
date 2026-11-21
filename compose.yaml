@@ -1,0 +1,37 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mysafeip:local
+    user: "10001:10001"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Generate JWT_SECRET in .env first}
+      DISABLE_REGISTER: "true"
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      SQLALCHEMY_DATABASE_URI: sqlite:////data/mysafeip.db
+      URL_WEBSITE: ${MYSAFEIP_URL:-http://127.0.0.1:8000}
+      DEFAULT_LANGUAGE: ${MYSAFEIP_LANGUAGE:-fr}
+      ADMIN_SEE_USERS_IP: "false"
+      TRUSTED_PROXIES: "false"
+      PYTHON_DOTENV_DISABLED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--no-proxy-headers"]
+    ports:
+      - "127.0.0.1:${MYSAFEIP_PORT:-8000}:8000"
+    volumes:
+      - data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+volumes:
+  data:

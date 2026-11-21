@@ -1,0 +1,142 @@
+{%extends "layout.html" %}
+
+{% block content %}
+
+{% if user %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6 col-lg-5">
+    <div class="card">
+      <div class="card-header">
+        <h4>{{ language['My-account'] }}</h4>
+      </div>
+      <div class="card-body">
+        <div class="mb-4">
+          <p class="mb-2"><strong>{{ language['Your-mail-address-is'] }}:</strong> <span class="text-secondary">{{ user.email }}</span></p>
+          <p class="mb-0"><strong>{{ language['Your-role-is'] }}:</strong>
+            {% if user.is_admin %}
+            <span class="badge badge-success">{{ language['administrator'] }}</span>
+            {% else %}
+            <span class="badge badge-secondary">{{ language['normal-user'] }}</span>
+            {% endif %}
+          </p>
+        </div>
+
+        <form method="POST">
+          <hr style="border-color: var(--border-color); margin: 24px 0;">
+          <h5 class="mb-3">{{ language['Default-IP-duration'] }}</h5>
+
+          <div class="form-group">
+            <label for="ip_ttl_hours" class="form-label">{{ language['Default-IP-duration'] }}</label>
+            <select class="form-select" name="ip_default_ttl_hours" id="ip_ttl_hours">
+              <option value="1" {% if user.ip_default_ttl_hours == 1 %}selected{% endif %}>1 {{ language['hour'] }}</option>
+              <option value="24" {% if user.ip_default_ttl_hours == 24 %}selected{% endif %}>24 {{ language['hours'] }}</option>
+              <option value="168" {% if user.ip_default_ttl_hours == 168 %}selected{% endif %}>7 {{ language['days'] }}</option>
+              <option value="720" {% if user.ip_default_ttl_hours == 720 %}selected{% endif %}>30 {{ language['days'] }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ia_ttl_hours" class="form-label">{{ language['Default-IA-duration'] }}</label>
+            <select class="form-select" name="ia_default_ttl_hours" id="ia_ttl_hours">
+              <option value="1" {% if user.ia_default_ttl_hours == 1 %}selected{% endif %}>1 {{ language['hour'] }}</option>
+              <option value="24" {% if user.ia_default_ttl_hours == 24 %}selected{% endif %}>24 {{ language['hours'] }}</option>
+              <option value="168" {% if user.ia_default_ttl_hours == 168 %}selected{% endif %}>7 {{ language['days'] }}</option>
+              <option value="720" {% if user.ia_default_ttl_hours == 720 %}selected{% endif %}>30 {{ language['days'] }}</option>
+            </select>
+          </div>
+
+          <hr style="border-color: var(--border-color); margin: 24px 0;">
+          <h5 class="mb-3">{{ language['Create-new-token'] }}</h5>
+
+          <div class="form-group">
+            <label class="form-check">
+              <input class="form-check-input" type="checkbox" value="true" name="token" id="token">
+              <span class="form-check-label">{{ language['Create-new-token'] }}</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="inputDescription" class="form-label">{{ language['Description'] }}</label>
+            <input type="text" id="inputDescription" class="form-control" name="description" value="{{ description }}" placeholder="{{ language['usefull-description'] }}">
+          </div>
+
+          <hr style="border-color: var(--border-color); margin: 24px 0;">
+          <h5 class="mb-3">{{ language['Activate-2FA-authentication'] }}</h5>
+
+          <input type="hidden" name="twofactor_settings" value="true">
+          <div class="form-group">
+            <label class="form-check">
+              <input class="form-check-input" type="checkbox" value="true" name="twofactor" id="twofactor" {% if user.twofactor %}checked{% endif %}>
+              <span class="form-check-label">{{ language['Activate-2FA-authentication'] }}</span>
+            </label>
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit">{{ language['Save'] }}</button>
+        </form>
+
+        {% if twofactorurl %}
+        <div class="info-block mt-4">
+          <p>{{ language['twofactor-advice'] }}</p>
+          <p><strong>{{ language['2fa-secret'] }}:</strong> <code>{{ user.twofactor }}</code></p>
+          <script src="/static/qrcode.min.js"></script>
+          <div id="qrcode" style="margin-top: 12px; padding: 12px; background: white; display: inline-block; border-radius: 8px;"></div>
+          <script type="text/javascript">
+            new QRCode(document.getElementById("qrcode"), "{{ twofactorurl }}");
+          </script>
+        </div>
+        {% endif %}
+
+        {% if newtoken %}
+        <div class="info-block success-block mt-4">
+          <p>{{ language['token-advice'] }}</p>
+          <p><strong>{{ language['token-key'] }}:</strong> <code>{{ newtoken['key'] }}</code></p>
+          <p><strong>{{ language['token-secret'] }}:</strong> <code>{{ newtoken['secret'] }}</code></p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if tokens %}
+<div class="row mt-4 justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h5>{{ language['List-of-tokens'] }}</h5>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ language['key'] }}</th>
+                <th>{{ language['Description'] }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for token in tokens %}
+              <tr>
+                <td><code>{{ token.key }}</code></td>
+                <td>{{ token.description or '-' }}</td>
+                <td>
+                  <form method="POST" class="d-inline">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="token_id" value="{{ token.id }}">
+                    <button class="btn btn-sm btn-danger" type="submit">{{ language['Delete'] }}</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+required-version = "==0.17.5"
+target-version = "py312"
+# Garder la sélection de règles et les exclusions par défaut de la version figée.
+respect-gitignore = true
+# Les modules d’app/ sont importés par leur nom simple au démarrage.
+src = [".", "app"]
+
+[lint.flake8-bugbear]
+# Déclarations FastAPI utilisées comme valeurs par défaut dans les signatures.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Form"]

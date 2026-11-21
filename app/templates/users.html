@@ -1,0 +1,54 @@
+{%extends "layout.html" %}
+
+{% block content %}
+
+{% if users %}
+<div class="card">
+  <div class="card-header">
+    <h4>{{ language['List-of-users'] }}</h4>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{{ language['Email'] }}</th>
+            <th>{{ language['Administrator'] }}</th>
+            <th>{{ language['Delete-account'] }}</th>
+            <th>{{ language['Reset-password'] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <a href="/users/details/{{ u.id }}" style="color: var(--accent-primary); text-decoration: none; font-weight: 500;">{{ u.email }}</a>
+            </td>
+            <td>
+              {% if u.is_admin %}
+              <span class="badge badge-success">{{ language['administrator'] }}</span>
+              {% else %}
+              <span class="badge badge-secondary">{{ language['normal-user'] }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="POST" class="d-inline">
+                <input type="hidden" name="email" value="{{ u.email }}">
+                <button class="btn btn-sm btn-danger" type="submit">{{ language['Delete-account'] }}</button>
+              </form>
+            </td>
+            <td>
+              <form method="GET" action="/users/reset_password/{{ u.id }}" class="d-inline">
+                <button class="btn btn-sm btn-secondary" type="submit">{{ language['Reset-password'] }}</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,45 @@
+{%extends "layout.html" %}
+
+{% block content %}
+
+{% if user.email %}
+<div class="hero">
+  <h1>{{ language['Authenticated'] }}</h1>
+  <p>{{ language['Your-know-logged-as'] }} <strong>{{ user.email }}</strong></p>
+  <div class="hero-actions">
+    <a href="/ips/config" class="btn btn-primary">{{ language['Declare-trust-ip'] }}</a>
+  </div>
+</div>
+{% else %}
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="logo">
+      <div class="icon">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <h1>{{ language['Register'] }}</h1>
+    </div>
+
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">{{ language['Email-address'] }}</label>
+        <input type="email" class="form-control" name="email" value="{{email}}" placeholder="you@example.com" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ language['Password'] }}</label>
+        <input type="password" class="form-control" name="password" value="{{password}}" placeholder="••••••••" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ language['Confirm-password'] }}</label>
+        <input type="password" class="form-control" name="confirm_password" value="{{confirm_password}}" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">{{ language['Register'] }}</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

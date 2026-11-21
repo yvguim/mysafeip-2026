@@ -1,0 +1,17 @@
+# Only the application sources and build inputs enter the context.
+**
+!Dockerfile
+!requirements.txt
+!build/
+!build/start.sh
+!app/
+!app/**
+app/**/.env
+app/**/.env.*
+app/**/*.db
+app/**/*.db-*
+app/**/*.sqlite
+app/**/*.sqlite3
+app/**/__pycache__/
+app/**/*.pyc
+app/tests/

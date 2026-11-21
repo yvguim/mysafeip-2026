@@ -1,0 +1,17 @@
+# Local secrets and runtime data (already tracked legacy files remain tracked).
+.env
+.env.*
+!.env.template
+!.env.example
+venv/
+.venv/
+.venv-tests/
+__pycache__/
+*.py[cod]
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,114 @@
+{%extends "layout.html" %}
+
+{% block content %}
+
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6 col-lg-5">
+    <div class="card">
+      <div class="card-header">
+        <h4>{{ language['Declare-a-new-link'] }}</h4>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="create">
+
+          <div class="form-group">
+            <label for="inputLink" class="form-label">{{ language['Destination-url'] }}</label>
+            <input type="url" id="inputLink" class="form-control" name="link" value="{{ link }}" placeholder="https://example.com" required autofocus>
+          </div>
+
+          <div class="form-group">
+            <label for="inputDescription" class="form-label">{{ language['Description'] }}</label>
+            <input type="text" id="inputDescription" class="form-control" name="description" value="{{ description }}" placeholder="{{ language['usefull-description'] }}">
+          </div>
+
+          <div class="form-group">
+            <label for="inputTtl" class="form-label">{{ language['Default-IA-duration'] }}</label>
+            <select id="inputTtl" class="form-select" name="ttl_hours">
+              <option value="{{ default_ia_ttl }}">{{ default_ia_ttl }}h ({{ language['Default'] }})</option>
+              <option value="1">1 {{ language['hour'] }}</option>
+              <option value="24">24 {{ language['hours'] }}</option>
+              <option value="168">7 {{ language['days'] }}</option>
+              <option value="720">30 {{ language['days'] }}</option>
+              <option value="custom">{{ language['Custom'] }}...</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="customDuration" style="display: none;">
+            <label for="inputCustomTtl" class="form-label">{{ language['Custom-duration-hours'] }}</label>
+            <input type="number" id="inputCustomTtl" class="form-control" name="custom_ttl_hours" min="1" max="{{ max_ttl_hours }}" placeholder="48">
+          </div>
+
+          <div class="form-group">
+            <label class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_permanent" value="true" id="permanentCheck">
+              <span class="form-check-label">{{ language['Permanent'] }}</span>
+            </label>
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit">{{ language['Create-new-instant-link'] }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('inputTtl').addEventListener('change', function() {
+  document.getElementById('customDuration').style.display = this.value === 'custom' ? 'block' : 'none';
+});
+</script>
+
+{% if links %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5>{{ language['List-of-instant-access-links'] }}</h5>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ language['Destination-url'] }}</th>
+                <th>{{ language['Instant-access-link'] }}</th>
+                <th>{{ language['Description'] }}</th>
+                <th>{{ language['Expires'] }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for lk in links %}
+              <tr>
+                <td><a href="{{ lk.link }}" target="_blank" style="color: var(--accent-primary); text-decoration: none;">{{ lk.link }}</a></td>
+                <td><a href="{{ url_website }}/instant-access/ia/{{ lk.unique_link }}" target="_blank" style="color: var(--accent-primary); text-decoration: none;"><code>{{ url_website }}/instant-access/ia/{{ lk.unique_link }}</code></a></td>
+                <td>{{ lk.description or '-' }}</td>
+                <td>
+                  {% if lk.is_permanent %}
+                  <span class="badge badge-success">{{ language['Permanent'] }}</span>
+                  {% elif lk.expires_at %}
+                  <span class="badge badge-warning" title="{{ lk.expires_at }}">{{ language['Expires'] }}: {{ lk.expires_at.strftime('%d/%m/%Y %H:%M') if lk.expires_at else '-' }}</span>
+                  {% else %}
+                  <span class="badge badge-secondary">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <form method="POST" class="d-inline">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="link_id" value="{{ lk.id }}">
+                    <button class="btn btn-sm btn-danger" type="submit">{{ language['Delete'] }}</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
