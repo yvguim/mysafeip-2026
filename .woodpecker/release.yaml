@@ -1,0 +1,49 @@
+# The same tested OCI index is pushed without rebuilding or changing latest.
+when:
+  - event: push
+    ref: refs/heads/main
+  - event: push
+    ref: refs/heads/ci/automatic-publication
+
+depends_on:
+  - release-tests
+
+clone:
+  git:
+    image: docker.io/woodpeckerci/plugin-git:2.8.0
+    settings:
+      depth: 0
+      partial: false
+
+steps:
+  - name: build-public-image
+    image: docker.io/woodpeckerci/plugin-docker-buildx:6.1.2
+    settings:
+      context: .
+      dockerfile: Dockerfile
+      repo: localhost/mysafeip-ci
+      tags: checked
+      platforms: linux/amd64,linux/arm64
+      default_labels: false
+      provenance: 'false'
+      dry_run: true
+      output: type=oci,dest=mysafeip-ci.oci.tar
+
+  - name: verify-release
+    image: docker.io/library/python:3.12-slim
+    commands:
+      - apt-get update && apt-get install -y --no-install-recommends git
+      - python scripts/release_image.py mysafeip-ci.oci.tar mysafeip-release.txt
+
+  - name: publish-dockerhub
+    image: quay.io/skopeo/stable@sha256:9c68e585103448f7e4abb835132ffe9759d7a962a0fa426035775956e7a1e021
+    when:
+      - event: push
+        ref: refs/heads/main
+        status: success
+    environment:
+      DOCKERHUB_RELEASE_TOKEN:
+        from_secret: mysafeip_public_release_token
+    commands:
+      - 'printf "%s  %s\n" c1b54d9e50359e16ed942af253efabafb8aa10c4044f62ecfa31cd3be803bf75 scripts/publish_release.sh | sha256sum -c -'
+      - sh scripts/publish_release.sh
