@@ -1,0 +1,49 @@
+# Validate the public runner without registry access or publication.
+when:
+  - event: push
+    ref: refs/heads/ci/public-agent-validation
+
+steps:
+  - name: record-agent
+    image: docker.io/library/alpine:3.22
+    commands:
+      - 'printf "Agent ID: %s; commit: %s\n" "$CI_AGENT_ID" "$CI_COMMIT_SHA"'
+
+  - name: build-public-image
+    image: docker.io/woodpeckerci/plugin-docker-buildx:6.1.2
+    settings:
+      context: .
+      dockerfile: Dockerfile
+      repo: localhost/mysafeip-ci
+      tags: agent-validation
+      platforms: linux/amd64,linux/arm64
+      default_labels: false
+      provenance: 'false'
+      dry_run: true
+      output: type=oci,dest=mysafeip-ci.oci.tar
+
+  - name: verify-public-platforms
+    image: docker.io/library/python:3.12-slim
+    commands:
+      - |
+        python - <<'PY'
+        import json
+        import tarfile
+
+        def linux_platforms(archive, path):
+            with archive.extractfile(path) as stream:
+                index = json.load(stream)
+            for descriptor in index['manifests']:
+                if descriptor['mediaType'] == 'application/vnd.oci.image.index.v1+json':
+                    blob = descriptor['digest'].replace(':', '/', 1)
+                    yield from linux_platforms(archive, f'blobs/{blob}')
+                elif descriptor.get('platform', {}).get('os') == 'linux':
+                    yield 'linux/' + descriptor['platform']['architecture']
+
+        with tarfile.open('mysafeip-ci.oci.tar') as archive:
+            platforms = set(linux_platforms(archive, 'index.json'))
+        expected = {'linux/amd64', 'linux/arm64'}
+        if platforms != expected:
+            raise SystemExit(f'Expected {sorted(expected)}, got {sorted(platforms)}')
+        print('Verified OCI platforms:', ', '.join(sorted(platforms)))
+        PY
