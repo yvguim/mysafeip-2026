@@ -4,24 +4,11 @@ MySafeIP permet aux utilisateurs autorisés d’enregistrer leurs adresses IP po
 
 [English version](README.md)
 
-## Démarrage local avec Docker Compose
+## Documentation utilisateur
 
-Depuis un nouveau clone, avec Docker, son module Compose et OpenSSL installés :
-
-```sh
-(umask 077; set -C; printf 'JWT_SECRET=%s\n' "$(openssl rand -hex 32)" > .env)
-docker compose up -d --build --wait
-```
-
-La première commande refuse d’écraser un `.env` existant. Garde ce fichier privé et conserve le même secret entre les redémarrages. Ouvre `http://127.0.0.1:8000`. Les inscriptions sont fermées par défaut. Crée le premier compte administrateur de façon interactive :
-
-```sh
-docker compose exec web python -c 'from getpass import getpass; from init_admin import main; raise SystemExit(main([input("Adresse admin : "), getpass("Mot de passe : ")]))'
-```
-
-Connecte-toi avec ce compte. Le port est publié uniquement sur la boucle locale de l’hôte. Pour changer le port, règle à la fois `MYSAFEIP_PORT` et `MYSAFEIP_URL` dans `.env` (par exemple `8080` et `http://127.0.0.1:8080`). `MYSAFEIP_LANGUAGE` accepte `fr` ou `en`. Avant d’exposer l’application sur un réseau, configure HTTPS et revois les règles d’accès.
-
-SQLite conserve ses données dans le volume Compose `data`. `docker compose down` arrête l’application sans supprimer le volume ; `docker compose down --volumes` efface les données. Sauvegarde la base avant les mises à jour.
+- [Présentation et fonctionnalités](docs/utilisateurs/presentation.md) — à quoi sert MySafeIP et ce qui reste à la charge du système externe.
+- [Installation](docs/utilisateurs/installation.md) — démarrer avec Docker Compose, créer le premier administrateur et conserver ses données.
+- [Utilisation](docs/utilisateurs/utilisation.md) — gérer les IP, partager des liens, sécuriser son compte et lire la liste depuis un script.
 
 ## Lancer les tests
 
