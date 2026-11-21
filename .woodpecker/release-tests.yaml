@@ -1,0 +1,15 @@
+# A separate workflow keeps build and publication out of the test workspace.
+when:
+  - event: push
+    ref: refs/heads/main
+  - event: push
+    ref: refs/heads/ci/automatic-publication
+
+steps:
+  - name: test-public-source
+    image: docker.io/library/python:3.12-slim
+    commands:
+      - apt-get update && apt-get install -y --no-install-recommends git
+      - python -m pip install -r requirements-test.txt
+      - python scripts/smoke-runtime.py app
+      - python -m pytest -q
