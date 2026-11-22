@@ -15,10 +15,15 @@ MySafeIP lets authorized users register their IP addresses for use by systems th
 ```sh
 python3.12 -m venv .venv
 . .venv/bin/activate
-python -m pip install -r requirements-test.txt
+sh scripts/quiet-check.sh python -m pip install -r requirements-test.txt
 python scripts/smoke-runtime.py app
-python -m pytest -q
+sh scripts/quiet-check.sh python -m pytest
 ```
+
+These commands are silent on success. By default, pytest shows short tracebacks
+and stops at the first failure. To see progress, omit `sh scripts/quiet-check.sh`;
+to run the full suite even after a failure, pass `--maxfail=0` to pytest. To show
+the smoke test's success message, pass `--verbose`.
 
 ## License
 

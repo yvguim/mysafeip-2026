@@ -6,12 +6,30 @@ when:
     ref: refs/heads/ci/automatic-publication
   - event: push
     ref: refs/heads/feat/simplify-installation
+  - event: push
+    ref: refs/heads/ci/public-ruff-trivy
 
 steps:
+  - name: quality-public-source
+    image: docker.io/library/python:3.12-slim
+    commands:
+      - sh scripts/quiet-check.sh python -m pip install ruff==0.17.5
+      - sh scripts/quiet-check.sh ruff check .
+      - sh scripts/quiet-check.sh ruff format --check .
+
+  - name: security-public-source
+    image: docker.io/aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+    commands:
+      - sh scripts/quiet-check.sh trivy fs
+        --scanners vuln,secret,misconfig
+        --severity HIGH,CRITICAL
+        --exit-code 1
+        .
+
   - name: test-public-source
     image: docker.io/library/python:3.12-slim
     commands:
-      - apt-get update && apt-get install -y --no-install-recommends git
-      - python -m pip install -r requirements-test.txt
+      - sh scripts/quiet-check.sh sh -ec 'apt-get update && apt-get install -y --no-install-recommends git'
+      - sh scripts/quiet-check.sh python -m pip install -r requirements-test.txt
       - python scripts/smoke-runtime.py app
-      - python -m pytest -q
+      - sh scripts/quiet-check.sh python -m pytest

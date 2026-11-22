@@ -15,10 +15,15 @@ MySafeIP permet aux utilisateurs autorisés d’enregistrer leurs adresses IP po
 ```sh
 python3.12 -m venv .venv
 . .venv/bin/activate
-python -m pip install -r requirements-test.txt
+sh scripts/quiet-check.sh python -m pip install -r requirements-test.txt
 python scripts/smoke-runtime.py app
-python -m pytest -q
+sh scripts/quiet-check.sh python -m pytest
 ```
+
+Ces commandes sont silencieuses en cas de succès. Par défaut, pytest affiche des
+traces courtes et s’arrête au premier échec. Pour afficher la progression, retirez
+`sh scripts/quiet-check.sh` ; pour lancer toute la suite, ajoutez `--maxfail=0` à
+pytest. Pour afficher la confirmation du smoke test, ajoutez `--verbose`.
 
 ## Licence
 
