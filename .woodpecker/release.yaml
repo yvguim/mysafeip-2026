@@ -4,6 +4,8 @@ when:
     ref: refs/heads/main
   - event: push
     ref: refs/heads/ci/automatic-publication
+  - event: push
+    ref: refs/heads/feat/simplify-installation
 
 depends_on:
   - release-tests

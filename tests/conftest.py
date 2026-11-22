@@ -49,7 +49,6 @@ def app_modules(tmp_path_factory):
     environment = {
         "PYTHON_DOTENV_DISABLED": "1",
         "JWT_SECRET": secrets.token_hex(48),
-        "SETUP_TOKEN": "",
         "ALGORITHM": "HS256",
         "ACCESS_TOKEN_EXPIRE_MINUTES": "30",
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{runtime / 'bootstrap.sqlite3'}",
