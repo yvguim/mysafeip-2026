@@ -131,12 +131,16 @@ def main() -> None:
     parser.add_argument(
         "app_dir", type=Path, help="directory containing main.py and templates/"
     )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="also report a successful check"
+    )
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="mysafeip-runtime-") as scratch:
         run_smoke(args.app_dir.resolve(strict=True), Path(scratch))
-    print(
-        f"Python {sys.version.split()[0]}: GET / returned HTTP 200; APScheduler and Uvicorn shut down cleanly"
-    )
+    if args.verbose:
+        print(
+            f"Python {sys.version.split()[0]}: GET / returned HTTP 200; APScheduler and Uvicorn shut down cleanly"
+        )
 
 
 if __name__ == "__main__":

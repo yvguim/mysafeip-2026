@@ -6,6 +6,8 @@ when:
     ref: refs/heads/ci/automatic-publication
   - event: push
     ref: refs/heads/feat/simplify-installation
+  - event: push
+    ref: refs/heads/ci/public-ruff-trivy
 
 depends_on:
   - release-tests
