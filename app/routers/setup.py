@@ -1,9 +1,8 @@
 """One-time web bootstrap of a new SQLite installation."""
 
-import re
 from contextlib import contextmanager
-from secrets import compare_digest
 from sqlite3 import SQLITE_BUSY, SQLITE_LOCKED
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
@@ -22,8 +21,8 @@ from settings import settings
 
 router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory="templates")
-PRIVATE_HEADERS = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
-TOKEN_FORMAT = re.compile(r"[a-f0-9]{64}")
+PRIVATE_HEADERS = {"Cache-Control": "no-store", "Referrer-Policy": "same-origin"}
+LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
 @contextmanager
@@ -43,11 +42,7 @@ def retry_on_busy(db: Session):
 
 
 def is_available(db: Session) -> bool:
-    if not (
-        settings.DISABLE_REGISTER
-        and TOKEN_FORMAT.fullmatch(settings.SETUP_TOKEN) is not None
-        and settings.SETUP_TOKEN != settings.JWT_SECRET
-    ):
+    if not settings.DISABLE_REGISTER:
         return False
     with retry_on_busy(db):
         return db.get(InitialSetup, 1) is not None and db.query(User.id).first() is None
@@ -55,6 +50,16 @@ def is_available(db: Session) -> bool:
 
 def unavailable() -> Response:
     return Response(status_code=404, headers=PRIVATE_HEADERS)
+
+
+def setup_host_allowed(request: Request) -> bool:
+    try:
+        host = request.url.hostname
+        return host in LOCAL_HOSTS or (
+            host is not None and host == urlsplit(settings.URL_WEBSITE).hostname
+        )
+    except ValueError:
+        return False
 
 
 def render_form(request: Request, language: dict, status: int = 200, error: str = ""):
@@ -75,13 +80,14 @@ def setup_form(
 ):
     if not is_available(db):
         return unavailable()
+    if not setup_host_allowed(request):
+        return Response(status_code=403, headers=PRIVATE_HEADERS)
     return render_form(request, language)
 
 
 @router.post("/setup")
 def create_first_admin(
     request: Request,
-    setup_token: str = Form(""),
     email: str = Form(""),
     password: str = Form(""),
     confirm_password: str = Form(""),
@@ -90,10 +96,17 @@ def create_first_admin(
 ):
     if not is_available(db):
         return unavailable()
-    if not TOKEN_FORMAT.fullmatch(setup_token) or not compare_digest(
-        setup_token, settings.SETUP_TOKEN
-    ):
-        return render_form(request, language, 403, "Setup-invalid-token")
+    # Prevent other sites from submitting the local bootstrap form in a browser.
+    origin = request.headers.get("origin")
+    site = request.headers.get("sec-fetch-site")
+    if not setup_host_allowed(request) or site not in (None, "same-origin"):
+        return Response(status_code=403, headers=PRIVATE_HEADERS)
+    if origin is None:
+        same_origin = site == "same-origin"
+    else:
+        same_origin = origin == f"{request.url.scheme}://{request.url.netloc}"
+    if not same_origin:
+        return Response(status_code=403, headers=PRIVATE_HEADERS)
     if password != confirm_password or not password_validity(password):
         return render_form(request, language, 422, "Setup-invalid-password")
     try:
