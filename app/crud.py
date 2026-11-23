@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timedelta
 
 import pyotp
-from sqlalchemy import delete
+from sqlalchemy import delete, update
 from sqlalchemy.orm import Session
 
 import security
@@ -36,12 +36,17 @@ def create_user(db: Session, user: UserCreate):
     return db_user
 
 
-def reset_user_password(db: Session, user: User, password: str):
-    user = db.query(User).get(user.id)
-    user.hashed_password = security.get_password_hash(password)
+def reset_user_password(db: Session, user: User, password: str) -> bool:
+    # A concurrent change must not be overwritten using a stale password check.
+    result = db.connection().execute(
+        update(User.__table__)
+        .where(User.id == user.id, User.hashed_password == user.hashed_password)
+        .values(hashed_password=security.get_password_hash(password))
+    )
+    if result.rowcount != 1:
+        return False
     db.commit()
-    db.refresh(user)
-    return user
+    return True
 
 
 def enable_user_twofactor(db: Session, user: User):

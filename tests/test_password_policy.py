@@ -82,6 +82,7 @@ def test_signup_and_password_change_reject_the_same_weak_values(
         data={
             "password": weak,
             "confirm_password": weak,
+            **({"current_password": password} if role == "owner" else {}),
         },
     )
     assert _snapshot(db, app_modules.models) == before
@@ -152,6 +153,7 @@ def test_valid_passwords_work_for_signup_and_authorized_change(
         data={
             "password": replacement,
             "confirm_password": replacement,
+            **({"current_password": password} if role == "owner" else {}),
         },
     )
     assert response.status_code == 200
@@ -197,6 +199,7 @@ def test_confirmation_mismatch_still_rejects_valid_password_without_mutation(
     admin,
     db,
     app_modules,
+    password,
 ):
     """Policy compliance cannot bypass confirmation in either form."""
     fields = {"password": "Changed-pass-43!", "confirm_password": "Different-pass-44!"}
@@ -212,6 +215,8 @@ def test_confirmation_mismatch_still_rejects_valid_password_without_mutation(
     assert _snapshot(db, app_modules.models) == before
     login(client, user if role == "owner" else admin)
     client.cookies.set("lang", language)
+    if role == "owner":
+        fields["current_password"] = password
     response = client.post(f"/users/reset_password/{user.id}", data=fields)
     _assert_warning(response, "Password-missmatch")
     assert _snapshot(db, app_modules.models) == before

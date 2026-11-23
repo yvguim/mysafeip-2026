@@ -31,7 +31,8 @@ Anyone who has the link can use it while it is valid. Don't post it publicly, an
 
 ## Protect your account
 
-- In your profile, you can change your password and set the default lifetimes for IPs and links.
+- In **My account → Change password**, enter your current password, then enter and confirm the new one. Use the new password the next time you sign in. This does not end existing sessions or revoke API keys.
+- In your profile, you can also set the default lifetimes for IPs and links.
 - To enable TOTP, select the two-factor authentication option and save. Scan the QR code in your authenticator or enter the key manually. Protect that key like a password. Verify that you can sign in with a code before closing your current session, for example in a private window.
 - An administrator can open the account list (`/users/read`) and access the interactive documentation at `/docs` after signing in. Don't assume an administrator can see every IP: that setting is disabled in the supplied Compose configuration.
 

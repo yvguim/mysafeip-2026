@@ -21,6 +21,10 @@
           </p>
         </div>
 
+        {% if is_own_profile %}
+        <a class="btn btn-secondary" href="/users/reset_password/{{ user.id }}">{{ language['Change-password'] }}</a>
+        {% endif %}
+
         <form method="POST">
           <hr style="border-color: var(--border-color); margin: 24px 0;">
           <h5 class="mb-3">{{ language['Default-IP-duration'] }}</h5>
