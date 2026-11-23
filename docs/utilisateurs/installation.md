@@ -45,25 +45,27 @@ docker compose exec web python -c 'from getpass import getpass; from init_admin 
 
 Si l’adresse existe déjà, le script ne remplace pas le compte.
 
-## Récupérer l’accès à un compte administrateur
+## Réinitialiser le mot de passe d’un compte depuis l’hôte Docker
 
-Sur l’hôte Docker, depuis la racine du dépôt, lance la commande et saisis l’adresse exacte du compte administrateur actif :
+Utilise une version de l’image qui contient `/app/scripts/reset_admin.py`. Le tag par défaut de Compose peut être plus ancien : si le fichier est absent, sélectionne un tag publié compatible en suivant la procédure de mise à jour ci-dessous. Il n’est pas nécessaire de copier le script sur l’hôte.
+
+Sur l’hôte Docker, depuis le dossier du fichier Compose, lance la commande et saisis l’adresse exacte d’un compte actif (administrateur ou utilisateur standard) :
 
 ```sh
-printf 'Adresse admin : ' >&2
-IFS= read -r admin_email && docker compose exec -T web python -B - -- "$admin_email" < scripts/reset_admin.py
+printf 'Adresse du compte : ' >&2
+IFS= read -r account_email && docker compose exec -T web python -B /app/scripts/reset_admin.py -- "$account_email"
 ```
 
 Si tu as démarré le conteneur sans Compose, remplace `mysafeip` par son nom ou son ID :
 
 ```sh
-printf 'Adresse admin : ' >&2
-IFS= read -r admin_email && docker exec -i mysafeip python -B - -- "$admin_email" < scripts/reset_admin.py
+printf 'Adresse du compte : ' >&2
+IFS= read -r account_email && docker exec mysafeip python -B /app/scripts/reset_admin.py -- "$account_email"
 ```
 
-Le script reste sur l’hôte ; Docker envoie son contenu à Python dans le conteneur. Il n’y a ni bouton ni endpoint HTTP de récupération. Réserve l’accès au démon Docker et au volume SQLite aux personnes de confiance.
+Le script s’exécute dans le conteneur en cours d’exécution, avec son utilisateur habituel. Il n’ajoute pas de route HTTP de récupération. Réserve l’accès au démon Docker et à la base de données aux personnes de confiance.
 
-La commande remplace le mot de passe et efface le secret TOTP du compte en une seule opération. Elle affiche le nouveau mot de passe sur la sortie standard uniquement après réussite. Exécute-la dans un terminal privé, connecte-toi avec le nouveau mot de passe et réactive le TOTP depuis ton profil. Elle ne crée ni ne réactive de compte et ne révoque pas les sessions existantes ni les clés API.
+La commande affiche le nouveau mot de passe sur la sortie standard uniquement après l’avoir enregistré. Lance-la dans un terminal privé. Elle conserve par défaut l’authentification à deux facteurs (TOTP). Si le second facteur a aussi été perdu, ajoute `--clear-totp` juste avant `--`, puis réactive le TOTP après connexion. Elle ne crée ni ne réactive de compte et ne révoque pas les sessions existantes ni les clés API.
 
 ## Configurer le port, l’adresse et la langue
 

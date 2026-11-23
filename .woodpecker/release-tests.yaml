@@ -12,6 +12,8 @@ when:
     ref: refs/heads/feat/profile-password-change
   - event: push
     ref: refs/heads/feat/admin-password-reset
+  - event: push
+    ref: refs/heads/feat/packaged-password-recovery
 
 steps:
   - name: quality-public-source
