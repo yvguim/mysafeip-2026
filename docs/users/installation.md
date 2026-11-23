@@ -45,6 +45,26 @@ docker compose exec web python -c 'from getpass import getpass; from init_admin 
 
 If the email already exists, the script does not replace the account.
 
+## Recover access to an administrator account
+
+On the Docker host, from the repository root, run the command and enter the exact email address of the active administrator account:
+
+```sh
+printf 'Admin email: ' >&2
+IFS= read -r admin_email && docker compose exec -T web python -B - -- "$admin_email" < scripts/reset_admin.py
+```
+
+If you started the container without Compose, replace `mysafeip` with its name or ID:
+
+```sh
+printf 'Admin email: ' >&2
+IFS= read -r admin_email && docker exec -i mysafeip python -B - -- "$admin_email" < scripts/reset_admin.py
+```
+
+The script stays on the host; Docker streams it to Python inside the container. There is no recovery button or HTTP endpoint. Restrict access to the Docker daemon and SQLite volume to trusted operators.
+
+The command replaces the password and clears the account's TOTP secret in one operation. It prints the new password to standard output only after the operation succeeds. Use a private terminal, sign in with the new password, and re-enable TOTP from your profile. The command does not create or reactivate accounts or revoke existing sessions or API keys.
+
 ## Configure the port, address, and language
 
 If port 8000 is already in use, add these lines to `.env` without replacing `JWT_SECRET`, then run `docker compose up -d --wait` again:

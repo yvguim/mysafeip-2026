@@ -45,6 +45,26 @@ docker compose exec web python -c 'from getpass import getpass; from init_admin 
 
 Si l’adresse existe déjà, le script ne remplace pas le compte.
 
+## Récupérer l’accès à un compte administrateur
+
+Sur l’hôte Docker, depuis la racine du dépôt, lance la commande et saisis l’adresse exacte du compte administrateur actif :
+
+```sh
+printf 'Adresse admin : ' >&2
+IFS= read -r admin_email && docker compose exec -T web python -B - -- "$admin_email" < scripts/reset_admin.py
+```
+
+Si tu as démarré le conteneur sans Compose, remplace `mysafeip` par son nom ou son ID :
+
+```sh
+printf 'Adresse admin : ' >&2
+IFS= read -r admin_email && docker exec -i mysafeip python -B - -- "$admin_email" < scripts/reset_admin.py
+```
+
+Le script reste sur l’hôte ; Docker envoie son contenu à Python dans le conteneur. Il n’y a ni bouton ni endpoint HTTP de récupération. Réserve l’accès au démon Docker et au volume SQLite aux personnes de confiance.
+
+La commande remplace le mot de passe et efface le secret TOTP du compte en une seule opération. Elle affiche le nouveau mot de passe sur la sortie standard uniquement après réussite. Exécute-la dans un terminal privé, connecte-toi avec le nouveau mot de passe et réactive le TOTP depuis ton profil. Elle ne crée ni ne réactive de compte et ne révoque pas les sessions existantes ni les clés API.
+
 ## Configurer le port, l’adresse et la langue
 
 Si le port 8000 est déjà occupé, ajoute ces lignes à `.env` (sans remplacer `JWT_SECRET`), puis relance `docker compose up -d --wait` :
