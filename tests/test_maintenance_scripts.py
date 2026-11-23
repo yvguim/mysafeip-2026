@@ -5,6 +5,9 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import quote
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -15,6 +18,7 @@ import socket
 import sqlite3
 import sys
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 import dotenv
 
@@ -32,7 +36,13 @@ def forbidden_dotenv(*args, **kwargs):
 
 
 def temporary_connect(database, *args, **kwargs):
-    if not Path(database).resolve().is_relative_to(temporary_root):
+    filename = database
+    if kwargs.get("uri") and str(database).startswith("file:"):
+        uri = urlsplit(database)
+        if uri.netloc:
+            raise RuntimeError("Remote SQLite URIs are forbidden in maintenance tests")
+        filename = unquote(uri.path)
+    if not Path(filename).resolve().is_relative_to(temporary_root):
         raise RuntimeError("SQLite connections must stay in the maintenance test directory")
     return connect(database, *args, **kwargs)
 
@@ -46,7 +56,12 @@ runpy.run_path(script, run_name="__main__")
 """
 
 
-def run_script(app_modules, tmp_path, database, script, *args):
+def run_script(app_modules, tmp_path, database, script, *args, uri=False):
+    database_url = (
+        f"sqlite:///file:{quote(str(database))}?mode=rwc&uri=true"
+        if uri
+        else f"sqlite:///{database}"
+    )
     return subprocess.run(
         [
             sys.executable,
@@ -74,7 +89,7 @@ def run_script(app_modules, tmp_path, database, script, *args):
                     "TRUSTED_PROXIES",
                 )
             },
-            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{database}",
+            "SQLALCHEMY_DATABASE_URI": database_url,
         },
         capture_output=True,
         text=True,
@@ -110,6 +125,112 @@ def test_init_admin_preserves_existing_account_on_duplicate(app_modules, tmp_pat
         assert connection.execute(
             "SELECT email, is_admin, is_active FROM users"
         ).fetchall() == [(args[0], 1, 1)]
+
+
+@pytest.mark.parametrize("uri", [False, True])
+def test_reset_admin_recovers_login_without_totp(
+    app_modules,
+    tmp_path,
+    db,
+    user_factory,
+    client_factory,
+    login,
+    password,
+    totp_time,
+    uri,
+):
+    import pyotp
+
+    totp = pyotp.TOTP(pyotp.random_base32())
+    admin = user_factory(
+        "-ops$literal@example.org", is_admin=True, twofactor=totp.secret
+    )
+    email = admin.email
+    login(client_factory(), admin, two_factor_code=totp.at(totp_time))
+
+    result = run_script(
+        app_modules,
+        tmp_path,
+        db.bind.url.database,
+        "scripts/reset_admin.py",
+        "--",
+        email,
+        uri=uri,
+    )
+    assert result.returncode == 0, result.stderr
+    (new_password,) = result.stdout.splitlines()
+    assert new_password != password
+    assert app_modules.auth.password_validity(new_password)
+    assert new_password not in result.stderr
+
+    db.refresh(admin)
+    assert admin.is_active and admin.is_admin
+    assert admin.twofactor == ""
+    assert admin.hashed_password != new_password
+    assert app_modules.security.verify_password(new_password, admin.hashed_password)
+
+    client = client_factory()
+    client.post("/signin", data={"username": email, "password": password})
+    assert "access_token" not in client.cookies
+    client.post("/signin", data={"username": email, "password": new_password})
+    assert "access_token" in client.cookies
+
+
+def test_reset_admin_leaves_ineligible_accounts_untouched(
+    app_modules, tmp_path, db, admin, user, user_factory
+):
+    inactive = user_factory(is_admin=True, is_active=False)
+    database = db.bind.url.database
+    with sqlite3.connect(database) as connection:
+        before = connection.execute("SELECT * FROM users ORDER BY id").fetchall()
+
+    for email in (user.email, inactive.email, "missing@example.org"):
+        result = run_script(
+            app_modules, tmp_path, database, "scripts/reset_admin.py", email
+        )
+        assert result.returncode == 1
+        assert result.stdout == ""
+        assert "No active administrator" in result.stderr
+
+    with sqlite3.connect(database) as connection:
+        assert (
+            connection.execute("SELECT * FROM users ORDER BY id").fetchall() == before
+        )
+
+
+@pytest.mark.parametrize("uri", [False, True])
+def test_reset_admin_does_not_create_a_missing_database(app_modules, tmp_path, uri):
+    database = tmp_path / "missing database.sqlite3"
+    result = run_script(
+        app_modules,
+        tmp_path,
+        database,
+        "scripts/reset_admin.py",
+        "admin@example.org",
+        uri=uri,
+    )
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "database not found" in result.stderr
+    assert not database.exists()
+
+
+def test_reset_admin_does_not_print_password_when_database_write_fails(
+    app_modules, tmp_path, db, admin
+):
+    database = db.bind.url.database
+    with sqlite3.connect(database) as connection:
+        connection.executescript(
+            "CREATE TRIGGER prevent_reset BEFORE UPDATE ON users "
+            "BEGIN SELECT RAISE(ABORT, 'writes disabled'); END;"
+        )
+    result = run_script(
+        app_modules, tmp_path, database, "scripts/reset_admin.py", admin.email
+    )
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "Unable to reset" in result.stderr
+    assert "Traceback" not in result.stderr
 
 
 def test_migrate_legacy_database_is_idempotent(app_modules, tmp_path):
