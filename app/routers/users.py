@@ -10,6 +10,7 @@ import models
 import schemas
 from auth import check_user_language, get_current_user, password_validity
 from database import get_db
+from security import verify_password
 from ttl import validate_ttl_hours
 
 router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(get_db)])
@@ -84,6 +85,15 @@ async def delete_users(
     )
 
 
+def _render_password_form(request, language, user, *, is_own_profile=False):
+    return templates.TemplateResponse(
+        request,
+        "reset_password.html",
+        {"user": user, "language": language, "is_own_profile": is_own_profile},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 @router.get("/reset_password/{user_id}")
 async def reset_password(
     user_id: int,
@@ -94,75 +104,47 @@ async def reset_password(
 ):
     if not current_user.is_admin and (current_user.id != user_id):
         language["danger"] = language["You-are-not-allowed-to-do-this"]
-        user = False
-        return templates.TemplateResponse(
-            request,
-            "reset_password.html",
-            {"request": request, "user": user, "language": language},
-        )
-    user = crud.get_user(db, user_id)
-    return templates.TemplateResponse(
-        request,
-        "reset_password.html",
-        {"request": request, "user": user, "language": language},
-    )
+        return _render_password_form(request, language, False)
+    is_own_profile = current_user.id == user_id
+    user = current_user if is_own_profile else crud.get_user(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    return _render_password_form(request, language, user, is_own_profile=is_own_profile)
 
 
 @router.post("/reset_password/{user_id}")
-async def post_reset_password(
+def post_reset_password(
     user_id: int,
     request: Request,
     current_user: models.User = Depends(get_current_user),
     password: str = Form(),
     confirm_password: str = Form(),
+    current_password: str = Form(""),
     db: Session = Depends(get_db),
     language: dict = Depends(check_user_language),
 ):
     if not current_user.is_admin and (current_user.id != user_id):
         language["danger"] = language["You-are-not-allowed-to-do-this"]
-        user = False
-        return templates.TemplateResponse(
-            request,
-            "reset_password.html",
-            {"request": request, "user": user, "language": language},
-        )
+        return _render_password_form(request, language, False)
 
-    user = crud.get_user(db, user_id)
-    if not password_validity(password):
+    is_own_profile = current_user.id == user_id
+    user = current_user if is_own_profile else crud.get_user(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    if is_own_profile and (
+        not current_password
+        or not verify_password(current_password, user.hashed_password)
+    ):
+        language["warning"] = language["Incorrect-current-password"]
+    elif not password_validity(password):
         language["warning"] = language["Password-help"]
-        return templates.TemplateResponse(
-            request,
-            "reset_password.html",
-            {"request": request, "user": user, "language": language},
-        )
-    if confirm_password != password:
+    elif confirm_password != password:
         language["warning"] = language["Password-missmatch"]
-        return templates.TemplateResponse(
-            request,
-            "reset_password.html",
-            {"request": request, "user": user, "language": language},
-        )
-    if (user.id != current_user.id) and (not current_user.is_admin):
-        language["danger"] = language["You-are-not-allowed-to-do-this"]
-        return templates.TemplateResponse(
-            request,
-            "register.html",
-            {"request": request, "user": current_user, "language": language},
-        )
-    user = crud.reset_user_password(db=db, user=user, password=password)
-    if not user:
+    elif not crud.reset_user_password(db=db, user=user, password=password):
         language["danger"] = language["An-error-occured-during-password-reset"]
-        return templates.TemplateResponse(
-            request,
-            "register.html",
-            {"request": request, "user": current_user, "language": language},
-        )
-    language["success"] = language["Password-reset-successfull"]
-    return templates.TemplateResponse(
-        request,
-        "reset_password.html",
-        {"request": request, "user": user, "language": language},
-    )
+    else:
+        language["success"] = language["Password-reset-successfull"]
+    return _render_password_form(request, language, user, is_own_profile=is_own_profile)
 
 
 @router.get("/details/{user_id}", response_model=schemas.User)
@@ -184,7 +166,13 @@ async def user_details(
     return templates.TemplateResponse(
         request,
         "user-details.html",
-        {"request": request, "user": user, "tokens": tokens, "language": language},
+        {
+            "request": request,
+            "user": user,
+            "tokens": tokens,
+            "language": language,
+            "is_own_profile": user is not None and user.id == current_user.id,
+        },
     )
 
 
@@ -233,6 +221,7 @@ async def update_user_details(
                 "user": user,
                 "tokens": tokens,
                 "language": language,
+                "is_own_profile": user is not None and user.id == current_user.id,
                 "twofactorurl": "",
                 "newtoken": "",
             },
@@ -275,5 +264,6 @@ async def update_user_details(
             "newtoken": newtoken,
             "tokens": tokens,
             "language": language,
+            "is_own_profile": user.id == current_user.id,
         },
     )

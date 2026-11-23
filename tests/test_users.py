@@ -124,6 +124,7 @@ def test_authorized_reset_persists_hash_and_changes_real_login(
         data={
             "password": replacement,
             "confirm_password": replacement,
+            **({"current_password": password} if role == "owner" else {}),
         },
     )
     assert response.status_code == 200
@@ -156,6 +157,7 @@ def test_invalid_own_password_reset_leaves_hash_unchanged(
     login,
     db,
     app_modules,
+    password,
 ):
     login(client, user)
     original_hash = user.hashed_password
@@ -166,6 +168,7 @@ def test_invalid_own_password_reset_leaves_hash_unchanged(
         data={
             "password": replacement,
             "confirm_password": confirmation,
+            "current_password": password,
         },
     )
     assert response.status_code == 200

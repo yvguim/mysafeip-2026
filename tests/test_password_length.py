@@ -30,6 +30,7 @@ def test_overlong_signup_and_change_leave_all_rows_unchanged(
     admin,
     db,
     app_modules,
+    password,
 ):
     """Creation and authorized changes refuse long values with translated guidance."""
     signup = client_factory()
@@ -59,6 +60,7 @@ def test_overlong_signup_and_change_leave_all_rows_unchanged(
         data={
             "password": value,
             "confirm_password": value,
+            **({"current_password": password} if role == "owner" else {}),
         },
     )
     assert response.status_code == 200

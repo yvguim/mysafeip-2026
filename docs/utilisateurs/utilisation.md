@@ -31,7 +31,8 @@ Toute personne qui possède le lien peut l’utiliser tant qu’il est valide. N
 
 ## Protéger son compte
 
-- Dans ton profil, tu peux changer ton mot de passe et définir les durées par défaut des IP et des liens.
+- Dans **Mon compte → Changer le mot de passe**, saisis ton mot de passe actuel, puis saisis et confirme le nouveau. Utilise le nouveau à ta prochaine connexion. Ce changement ne ferme pas les sessions déjà ouvertes et ne révoque pas les clés API.
+- Dans ton profil, tu peux aussi définir les durées par défaut des IP et des liens.
 - Pour activer le TOTP, coche la double authentification et enregistre. Scanne le QR code dans ton application d’authentification ou saisis la clé manuellement. Protège cette clé comme un mot de passe. Vérifie que tu peux te connecter avec le code avant de fermer ta session actuelle, par exemple dans une fenêtre privée.
 - Un administrateur peut ouvrir la liste des comptes (`/users/read`) et accéder à la documentation interactive à `/docs` après connexion. Ne présume pas qu’un compte administrateur a accès à toutes les adresses : ce réglage est désactivé dans le Compose fourni.
 
