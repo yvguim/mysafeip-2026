@@ -10,6 +10,7 @@ COPY build/start.sh /start.sh
 RUN chmod +x /start.sh
 
 COPY app /app
+COPY scripts/reset_admin.py /app/scripts/reset_admin.py
 
 RUN groupadd --gid 10001 mysafeip \
     && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin mysafeip \

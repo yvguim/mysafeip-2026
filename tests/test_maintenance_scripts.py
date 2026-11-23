@@ -153,6 +153,7 @@ def test_reset_admin_recovers_login_without_totp(
         tmp_path,
         db.bind.url.database,
         "scripts/reset_admin.py",
+        "--clear-totp",
         "--",
         email,
         uri=uri,
@@ -176,21 +177,74 @@ def test_reset_admin_recovers_login_without_totp(
     assert "access_token" in client.cookies
 
 
-def test_reset_admin_leaves_ineligible_accounts_untouched(
-    app_modules, tmp_path, db, admin, user, user_factory
+def test_reset_admin_resets_regular_account_without_disabling_totp(
+    app_modules,
+    tmp_path,
+    db,
+    admin,
+    user_factory,
+    client_factory,
+    login,
+    password,
+    totp_time,
 ):
-    inactive = user_factory(is_admin=True, is_active=False)
+    import pyotp
+
+    totp = pyotp.TOTP(pyotp.random_base32())
+    user = user_factory("-ops'$literal@example.org", twofactor=totp.secret)
+    login(client_factory(), user, two_factor_code=totp.at(totp_time))
+    admin_hash = admin.hashed_password
+
+    result = run_script(
+        app_modules,
+        tmp_path,
+        db.bind.url.database,
+        "scripts/reset_admin.py",
+        "--",
+        user.email,
+    )
+    assert result.returncode == 0, result.stderr
+    (new_password,) = result.stdout.splitlines()
+    assert new_password != password
+    db.refresh(user)
+    db.refresh(admin)
+    assert user.is_active and not user.is_admin
+    assert user.twofactor == totp.secret
+    assert admin.hashed_password == admin_hash
+
+    def can_sign_in(candidate, code=""):
+        client = client_factory()
+        client.post(
+            "/signin",
+            data={
+                "username": user.email,
+                "password": candidate,
+                "two_factor_code": code,
+            },
+        )
+        return "access_token" in client.cookies
+
+    assert not can_sign_in(password, totp.at(totp_time))
+    assert not can_sign_in(new_password)
+    assert can_sign_in(new_password, totp.at(totp_time))
+
+
+def test_reset_admin_leaves_ineligible_accounts_untouched(
+    app_modules, tmp_path, db, admin, user_factory
+):
+    inactive_admin = user_factory(is_admin=True, is_active=False)
+    inactive_user = user_factory(is_active=False)
     database = db.bind.url.database
     with sqlite3.connect(database) as connection:
         before = connection.execute("SELECT * FROM users ORDER BY id").fetchall()
 
-    for email in (user.email, inactive.email, "missing@example.org"):
+    for email in (inactive_admin.email, inactive_user.email, "missing@example.org"):
         result = run_script(
             app_modules, tmp_path, database, "scripts/reset_admin.py", email
         )
         assert result.returncode == 1
         assert result.stdout == ""
-        assert "No active administrator" in result.stderr
+        assert "No active account" in result.stderr
 
     with sqlite3.connect(database) as connection:
         assert (

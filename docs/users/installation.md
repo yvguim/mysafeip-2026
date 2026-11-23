@@ -45,25 +45,27 @@ docker compose exec web python -c 'from getpass import getpass; from init_admin 
 
 If the email already exists, the script does not replace the account.
 
-## Recover access to an administrator account
+## Reset an account password from the Docker host
 
-On the Docker host, from the repository root, run the command and enter the exact email address of the active administrator account:
+Use an image version that includes `/app/scripts/reset_admin.py`. The default Compose tag may be older; if the file is missing, select a compatible published tag by following the upgrade instructions below. No copy of the script is needed on the host.
+
+From the Compose directory on the Docker host, run the command and enter the exact email address of an active account (administrator or regular user):
 
 ```sh
-printf 'Admin email: ' >&2
-IFS= read -r admin_email && docker compose exec -T web python -B - -- "$admin_email" < scripts/reset_admin.py
+printf 'Account email: ' >&2
+IFS= read -r account_email && docker compose exec -T web python -B /app/scripts/reset_admin.py -- "$account_email"
 ```
 
 If you started the container without Compose, replace `mysafeip` with its name or ID:
 
 ```sh
-printf 'Admin email: ' >&2
-IFS= read -r admin_email && docker exec -i mysafeip python -B - -- "$admin_email" < scripts/reset_admin.py
+printf 'Account email: ' >&2
+IFS= read -r account_email && docker exec mysafeip python -B /app/scripts/reset_admin.py -- "$account_email"
 ```
 
-The script stays on the host; Docker streams it to Python inside the container. There is no recovery button or HTTP endpoint. Restrict access to the Docker daemon and SQLite volume to trusted operators.
+The script runs in the running container under its normal user. It does not add a recovery HTTP endpoint. Restrict access to the Docker daemon and the database to trusted operators.
 
-The command replaces the password and clears the account's TOTP secret in one operation. It prints the new password to standard output only after the operation succeeds. Use a private terminal, sign in with the new password, and re-enable TOTP from your profile. The command does not create or reactivate accounts or revoke existing sessions or API keys.
+The command prints the new password to standard output only after saving it. Run it in a private terminal. It preserves two-factor authentication (TOTP) by default. If the account has also lost its second factor, add `--clear-totp` immediately before `--` and re-enable TOTP after signing in. The command does not create or reactivate accounts or revoke existing sessions or API keys.
 
 ## Configure the port, address, and language
 

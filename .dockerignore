@@ -4,6 +4,9 @@
 !requirements.txt
 !build/
 !build/start.sh
+!scripts/
+scripts/**
+!scripts/reset_admin.py
 !app/
 !app/**
 app/**/.env
