@@ -10,6 +10,8 @@ when:
     ref: refs/heads/ci/public-ruff-trivy
   - event: push
     ref: refs/heads/feat/profile-password-change
+  - event: push
+    ref: refs/heads/feat/admin-password-reset
 
 steps:
   - name: quality-public-source
